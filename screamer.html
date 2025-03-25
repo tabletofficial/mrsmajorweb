@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>!!! WARNING !!!</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Arial Black', sans-serif;
+            cursor: none;
+        }
+        
+        .screamer-image {
+            max-width: 90vw;
+            max-height: 80vh;
+            display: none;
+            animation: shake 0.5s infinite;
+        }
+        
+        .creator-text {
+            color: #ff0000;
+            font-size: 2em;
+            text-shadow: 0 0 15px #ff0000;
+            margin-top: 30px;
+            opacity: 0;
+            position: absolute;
+            bottom: 30px;
+            text-align: center;
+            animation: 
+                fadeIn 2s forwards 1s,
+                pulse 1s infinite 3s,
+                glitch 1s infinite 5s;
+        }
+        
+        @keyframes shake {
+            0% { transform: translate(1px, 1px); }
+            10% { transform: translate(-1px, -2px); }
+            20% { transform: translate(-3px, 0px); }
+            30% { transform: translate(3px, 2px); }
+            40% { transform: translate(1px, -1px); }
+            50% { transform: translate(-1px, 2px); }
+            60% { transform: translate(-3px, 1px); }
+            70% { transform: translate(3px, 1px); }
+            80% { transform: translate(-1px, -1px); }
+            90% { transform: translate(1px, 2px); }
+            100% { transform: translate(1px, -2px); }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes glitch {
+            0% { text-shadow: 3px 0 0 #00ff00, -3px 0 0 #0000ff; }
+            25% { text-shadow: -3px 0 0 #00ff00, 3px 0 0 #0000ff; }
+            50% { text-shadow: 3px 0 0 #00ff00, -3px 0 0 #0000ff; }
+            75% { text-shadow: -3px 0 0 #00ff00, 3px 0 0 #0000ff; }
+            100% { text-shadow: 3px 0 0 #00ff00, -3px 0 0 #0000ff; }
+        }
+        
+        .countdown {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 1.2em;
+            opacity: 0.7;
+        }
+        
+        #audioPermission {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 1000;
+        }
+        
+        #audioPermission button {
+            padding: 15px 30px;
+            font-size: 1.5em;
+            background: #ff0000;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="audioPermission">
+        <h2>НАЖМИТЕ ДЛЯ АКТИВАЦИИ СКРИМЕРА</h2>
+        <button id="activateBtn">АКТИВИРОВАТЬ</button>
+    </div>
+
+    <div class="countdown" id="countdown">15</div>
+    <img src="screamer.jpg" class="screamer-image" id="screamerImg" alt="SCREAMER">
+    <div class="creator-text" id="creatorText">Created by RoMaN_ThE_CoDeR!</div>
+
+    <audio id="screamerAudio" preload="auto" loop>
+        <source src="screamer_audio.mp3" type="audio/mpeg">
+        <source src="screamer_audio.ogg" type="audio/ogg">
+    </audio>
+
+    <script>
+        // Элементы страницы
+        const permissionScreen = document.getElementById('audioPermission');
+        const activateBtn = document.getElementById('activateBtn');
+        const audio = document.getElementById('screamerAudio');
+        const img = document.getElementById('screamerImg');
+        const text = document.getElementById('creatorText');
+        const countdown = document.getElementById('countdown');
+        
+        // Функция запуска скримера
+        function startScreamer() {
+            // Скрываем экран активации
+            permissionScreen.style.display = 'none';
+            
+            // Показываем изображение
+            img.style.display = 'block';
+            
+            // Устанавливаем максимальную громкость
+            audio.volume = 1.0;
+            
+            // Пытаемся запустить аудио
+            audio.play().catch(e => {
+                console.error("Audio playback failed:", e);
+            });
+            
+            // Показываем текст через 1 секунду
+            setTimeout(() => text.style.opacity = '1', 1000);
+            
+            // Обратный отсчет 15 секунд
+            let seconds = 15;
+            const timer = setInterval(() => {
+                seconds--;
+                countdown.textContent = seconds;
+                
+                if (seconds <= 0) {
+                    clearInterval(timer);
+                    try {
+                        window.close();
+                    } catch (e) {
+                        document.body.innerHTML = '<h1 style="color:red">PAGE LOCKED</h1>';
+                    }
+                }
+            }, 1000);
+        }
+        
+        // Обработчик клика по кнопке активации
+        activateBtn.addEventListener('click', () => {
+            // Создаем и уничтожаем невидимый аудио элемент для разблокировки
+            const unlockAudio = new Audio();
+            unlockAudio.volume = 0;
+            unlockAudio.play().then(() => {
+                unlockAudio.remove();
+                startScreamer();
+            });
+        });
+        
+        // Пытаемся запустить автоматически через 1 секунду
+        setTimeout(() => {
+            audio.play().then(() => {
+                // Если получилось - сразу запускаем
+                permissionScreen.remove();
+                startScreamer();
+            }).catch(e => {
+                // Если нет - показываем экран активации
+                console.log("Требуется взаимодействие пользователя");
+            });
+        }, 1000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mrs Major Blood Flood</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #110000;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            color: #ff0000;
+        }
+        
+        .blood-counter {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            font-size: 1.5em;
+            text-shadow: 0 0 10px #ff0000;
+            z-index: 100;
+        }
+        
+        .blood-drop {
+            position: absolute;
+            width: 15px;
+            background: linear-gradient(to bottom, 
+                      rgba(255,50,50,0.9), 
+                      rgba(200,0,0,0.95));
+            animation: fall-down 15s linear forwards;
+            opacity: 0.9;
+            filter: drop-shadow(0 0 5px #ff0000);
+            border-radius: 0 0 8px 8px;
+            transform-origin: top;
+            z-index: 5;
+        }
+        
+        .blood-flood {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 0;
+            background: #ff0000;
+            z-index: 10;
+            transition: height 0.5s;
+        }
+        
+        @keyframes fall-down {
+            0% {
+                height: 0px;
+                top: -30px;
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.9;
+                height: 50px;
+            }
+            100% {
+                height: calc(100vh + 50px);
+                top: 0px;
+                opacity: 0.9;
+            }
+        }
+        
+        .blood-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4em;
+            font-weight: bold;
+            text-align: center;
+            text-shadow: 0 0 20px #ff0000;
+            animation: pulse 2s infinite alternate;
+            z-index: 20;
+        }
+        
+        @keyframes pulse {
+            0% { 
+                opacity: 0.8; 
+                text-shadow: 0 0 15px #ff0000;
+            }
+            100% { 
+                opacity: 1; 
+                text-shadow: 0 0 25px #ff0000;
+            }
+        }
+        
+        #bgMusic {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="blood-counter">BLOOD: <span id="blood-amount">100%</span></div>
+    <div class="blood-flood" id="blood-flood"></div>
+    
+    <!-- Ваша музыка music.mp3 -->
+    <audio id="bgMusic" loop autoplay>
+        <source src="music.mp3" type="audio/mpeg">
+    </audio>
+    
+    <script>
+        const config = {
+            totalBlood: 100,
+            bloodLossRate: 0.05,
+            streamCount: 20,
+            minWidth: 12,
+            maxWidth: 18,
+            poolThreshold: 50,
+            floodSpeed: 0.3
+        };
+        
+        let currentBlood = config.totalBlood;
+        let lastUpdateTime = Date.now();
+        let pooledBlood = 0;
+        let isFlooding = false;
+        const bgMusic = document.getElementById('bgMusic');
+        const bloodFlood = document.getElementById('blood-flood');
+        
+        function startAudio() {
+            bgMusic.volume = 1.0;
+            const playPromise = bgMusic.play();
+            
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    document.body.addEventListener('click', function() {
+                        bgMusic.play();
+                    }, { once: true });
+                });
+            }
+        }
+        
+        function createBloodDrops() {
+            const spacing = window.innerWidth / config.streamCount;
+            
+            for (let i = 0; i < config.streamCount; i++) {
+                const drop = document.createElement('div');
+                drop.className = 'blood-drop';
+                
+                const pos = i * spacing + (Math.random() * spacing * 0.4);
+                drop.style.left = `${pos}px`;
+                
+                const width = config.minWidth + 
+                             Math.random() * (config.maxWidth - config.minWidth);
+                const delay = Math.random() * 15;
+                const duration = 15 + Math.random() * 10;
+                
+                drop.style.width = `${width}px`;
+                drop.style.animationDelay = `${delay}s`;
+                drop.style.animationDuration = `${duration}s`;
+                
+                drop.addEventListener('animationend', function() {
+                    pooledBlood += width * 0.5;
+                    checkFloodLevel();
+                    this.remove();
+                });
+                
+                document.body.appendChild(drop);
+            }
+        }
+        
+        function checkFloodLevel() {
+            const poolPercent = (pooledBlood / (window.innerWidth * 0.5)) * 100;
+            
+            if (!isFlooding && poolPercent >= config.poolThreshold) {
+                isFlooding = true;
+                startFlooding();
+            }
+        }
+        
+        function startFlooding() {
+            let floodHeight = 0;
+            const floodInterval = setInterval(() => {
+                floodHeight += config.floodSpeed;
+                bloodFlood.style.height = `${floodHeight}%`;
+                
+                if (floodHeight > 40) {
+                    const text = document.querySelector('.blood-text');
+                    const newTop = 50 - (floodHeight - 40) * 0.5;
+                    text.style.top = `${newTop}%`;
+                }
+                
+                if (floodHeight >= 100) {
+                    clearInterval(floodInterval);
+                    window.location.href = "screamer.html";
+                }
+            }, 30);
+        }
+        
+        function updateBloodCounter() {
+            const now = Date.now();
+            const deltaTime = (now - lastUpdateTime) / 1000;
+            lastUpdateTime = now;
+            
+            currentBlood -= config.bloodLossRate * deltaTime;
+            if (currentBlood < 0) currentBlood = 0;
+            
+            document.getElementById('blood-amount').textContent = 
+                `${Math.floor(currentBlood)}%`;
+            
+            if (currentBlood <= 0) {
+                document.getElementById('blood-amount').textContent = "0% [FLOOD]";
+            }
+            
+            requestAnimationFrame(updateBloodCounter);
+        }
+        
+        window.onload = function() {
+            startAudio();
+            updateBloodCounter();
+            
+            setInterval(() => {
+                if (currentBlood > 0 && !isFlooding) {
+                    createBloodDrops();
+                }
+            }, 3000);
+            
+            window.addEventListener('resize', function() {
+                const drops = document.querySelectorAll('.blood-drop');
+                drops.forEach(drop => drop.remove());
+            });
+        };
+    </script>
+</body>
+</html>
